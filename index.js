@@ -11,14 +11,18 @@ const client = new Discord.Client()
 client.on('ready', () => {
 
     var log = new Logging(client)
-    log.logConnected();
-    log.logServers();
+    log.logConnected()
+    //log.logServers()
+    //log.logMemmbers()
 })
 
 client.on('message', (receivedMessage) => {
-    if (receivedMessage.author == client.user) {
+    if (receivedMessage.author == client.user || receivedMessage.author.bot) {
         return
     }
+
+    //Xu ly theo gio giac
+
     const hasCommand = MessageEvent.listenCommand(client, receivedMessage);
     if (hasCommand == 0) {
         const mention = MessageEvent.listenMention(client, receivedMessage);
@@ -31,7 +35,6 @@ client.on('message', (receivedMessage) => {
     }
 })
 client.on('disconnect', () => {
-    var generalChannel = client.channels.get(config.channels.general)
-    generalChannel.send('BOT is đi ngủ (。-ω-)zzz…')
+
 })
 client.login(config.token)

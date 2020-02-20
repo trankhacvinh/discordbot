@@ -38,6 +38,8 @@ function helpCommand(arguments, receivedMessage) {
     message += '- Ngoài ra bạn vẫn có thể thao tác với BOT bằng cách chat trên kênh hay tag trực tiếp như:\n'
     message += '---- `@tên_iem bé tìm yui hatano`\n'
     message += '---- `@tên_iem thử wiki fate stay night`\n'
+    message += '---- `Này @tên_iem, Đỗ Nam Trung là gay có phải không?`\n'
+    message += '---- `@tên_iem hát một bài`\n'
     message += '¯\_( ͡° ͜ʖ ͡°)_/¯'
     receivedMessage.channel.send(message)
 }
@@ -108,7 +110,7 @@ function ecchiCommand(arguments, receivedMessage) {
             events.getEcchiImage()
             events.intervals.ecchi = setInterval(() => {
                 events.getEcchiImage()
-            }, 300000);
+            }, config.interval.ecchi);
         } else if (arguments[0] == 'off') {
             receivedMessage.react("🥰")
             receivedMessage.channel.send("Chúc mừng " + receivedMessage.author.toString() + " đã vượt qua được cửa ải của nhân gian!")

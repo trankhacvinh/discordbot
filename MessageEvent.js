@@ -1,6 +1,10 @@
 const Discord = require('discord.js')
 const ResponseText = require('./ReponseText')
 const axios = require('axios')
+const TenTen = require('./TenTen')
+const nHentaiAPI = require('nhentai-api-js')
+let api = new nHentaiAPI()
+
 
 const MessageModuleUltis = (function () {
     function checkWiki(receivedMessage) {
@@ -16,35 +20,48 @@ const MessageModuleUltis = (function () {
                 var url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURI(dataparam)
 
                 axios.get(url).then((response) => {
-                    //receivedMessage.channel.send(response.data)
-                    var data = response.data
-                    var image = ''
-                    if (data.originalimage != null) {
-                        image = data.originalimage.source
-                    }
+                        //receivedMessage.channel.send(response.data)
+                        var data = response.data
 
-                    var extract = data.extract
-                    if (extract.length > 1800) {
-                        extract = extract.substring(0, 1800) + '...'
-                    }
+                        if (data.title == 'Not found.') {
+                            receivedMessage.channel.send('Không thấy', {
+                                file: 'https://i.imgur.com/0oxGctj.png'
+                            })
+                        } else {
+                            var image = ''
+                            if (data.originalimage != null) {
+                                image = data.originalimage.source
+                            }
 
-                    if (extract != '') {
-                        receivedMessage.channel.send(receivedMessage.author.toString() + ' Kết quả tìm WiKiPeDiA cho `' + dataparam + '` nè:')
-                        const embed = new Discord.RichEmbed()
-                            .setTitle(data.title)
-                            .setAuthor('')
-                            .setColor(0x00AE86)
-                            .setDescription(extract)
-                            .setFooter("Bot chỉ phục vụ mục đích nhân đạo", "https://i.imgur.com/Oqr0kHs.jpg")
-                            .setImage(image)
-                            .setThumbnail(image)
-                            .setTimestamp()
-                            .setURL(data.content_urls.desktop.page)
-                        receivedMessage.channel.send({
-                            embed
+                            var extract = data.extract
+                            if (extract.length > 1800) {
+                                extract = extract.substring(0, 1800) + '...'
+                            }
+
+                            if (extract != '') {
+                                receivedMessage.channel.send(receivedMessage.author.toString() + ' Kết quả tìm WiKiPeDiA cho `' + dataparam + '` nè:')
+                                const embed = new Discord.RichEmbed()
+                                    .setTitle(`${data.title}`)
+                                    .setAuthor('')
+                                    .setColor(0x00AE86)
+                                    .setDescription(extract)
+                                    .setFooter("Bot chỉ phục vụ mục đích nhân đạo", "https://i.imgur.com/Oqr0kHs.jpg")
+                                    .setImage(image)
+                                    .setThumbnail(image)
+                                    .setTimestamp()
+                                    .setURL(data.content_urls.desktop.page)
+                                receivedMessage.channel.send({
+                                    embed
+                                })
+                            }
+                        }
+                    })
+                    .catch(function (error) {
+                        receivedMessage.channel.send('Không thấy', {
+                            file: 'https://i.imgur.com/0oxGctj.png'
                         })
-                    }
-                })
+                    })
+                    .then(function () {})
                 return false
             }
             return true
@@ -68,9 +85,9 @@ const MessageModuleUltis = (function () {
                     return true
                 var dataparam = search[1].trim()
                 if (dataparam != '') {
-                    var url = 'https://lmgtfy.com/?q=' + dataparam
+                    var url = 'https://lmgtfy.com/?q=' + encodeURI(dataparam)
                     const embed = new Discord.RichEmbed()
-                        .setTitle(url)
+                        .setTitle(`${url}`)
                         .setColor(0x00AE86)
                         .setTimestamp()
                         .setURL(url)
@@ -97,6 +114,30 @@ const Message = (function () {
     function listenAll(client, receivedMessage) {
         try {
             //receivedMessage.channel.send("Hi " + receivedMessage.author.toString() + " sent: " + receivedMessage.content)
+
+            var arr = ResponseText.phanHoiDuaTrenTinNhan(receivedMessage.content)
+            if (arr.length) {
+                var reacted = false;
+                for (let index = 0; index < arr.length; index++) {
+                    const element = arr[index]
+                    if (reacted == false && element.react == true && element.react.emo != '') {
+                        receivedMessage.react(element.emo)
+                        reacted = true;
+                    }
+                    if (element.type == 'text') {
+                        receivedMessage.channel.send(receivedMessage.author.toString() + ' ' + element.text)
+                    } else if (element.type == 'image') {
+                        receivedMessage.channel.send('', {
+                            file: element.text
+                        })
+                    } else if (element.type == 'tag') {
+                        if (element.userId != '') {
+                            receivedMessage.channel.send(`<@${element.userId}> Có người nhắc kìa\n`)
+                            receivedMessage.channel.send("```" + receivedMessage.content + "```")
+                        }
+                    }
+                }
+            }
 
             return 1
         } catch (e) {
@@ -133,6 +174,97 @@ const Message = (function () {
                     continueListening = MessageModuleUltis.checkWiki(receivedMessage)
                     if (continueListening == false) break
                     continueListening = MessageModuleUltis.googleit(receivedMessage)
+                    if (continueListening == false) break
+
+                    var arr = ResponseText.phanHoiDuaTrenTinNhanTag(receivedMessage.content)
+                    if (arr.length) {
+                        var reacted = false
+                        for (let index = 0; index < arr.length; index++) {
+                            const element = arr[index]
+
+                            if (reacted == false && element.react == true && element.react.emo != '') {
+                                receivedMessage.react(element.emo)
+                                reacted = true
+                            }
+
+                            if (element.type == 'text') {
+                                if (index == 0)
+                                    receivedMessage.channel.send(receivedMessage.author.toString() + ' ' + element.text)
+                                else
+                                    receivedMessage.channel.send(element.text)
+                            } else if (element.type == 'image') {
+                                receivedMessage.channel.send('', {
+                                    file: element.text
+                                })
+                            } else if (element.type == 'tag') {
+                                if (element.text != '') {
+                                    receivedMessage.channel.send(receivedMessage.author.toString() + ' ' + element.text)
+                                } else {
+                                    if (element.userId != '') {
+                                        receivedMessage.channel.send(`<@${config.ids.me}> ????\n`)
+                                        receivedMessage.channel.send("```" + receivedMessage.content + "```")
+                                    }
+                                }
+                            } else if (element.type == 'tenten') {
+
+                                TenTen.random().then(data => {
+                                    api.g(data.id).then(gallery => {
+                                        //var embed = buildTentenEmbed(gallery)
+                                        console.log("OK GO")
+                                        var thumb = gallery.getPagesThumbnail()[0]
+                                        var cover = gallery.getCover()
+                                        var title = gallery.title.pretty
+                                        var author = gallery.tags.filter((el) => {
+                                            return el.type == 'artist'
+                                        })[0] || {
+                                            name: '',
+                                            url: '',
+                                            count: 0
+                                        }
+                                        var url = `https://nhentai.net/g/${gallery.id}`
+                                        var engtitle = ''
+                                        var japtitle = ''
+                                        if (gallery.title.english != '') {
+                                            engtitle = gallery.title.english
+                                        }
+                                        if (gallery.title.japanese != '') {
+                                            japtitle = gallery.title.japanese
+                                        }
+                                        var description = '**Tags**:\n'
+                                        gallery.tags.forEach((el) => {
+                                            if (el.type == 'tag')
+                                                description += ` **${el.name}** (${el.count}); `
+                                        })
+                                        if (description.length > 1800)
+                                            description = description.substring(0, 1800) + '....'
+
+                                        const embed = new Discord.RichEmbed()
+                                            .setTitle(`${title}`)
+                                            .setAuthor(`Tác giả ${author.name} (${author.count})`, '') //author.url
+                                            .setColor(0x00AE86)
+                                            .setDescription(`${description}`)
+                                            .setFooter(`BOT phục vụ mục đích làm nhóm lớn mạnh`, `https://i.imgur.com/Oqr0kHs.jpg`)
+                                            .setImage(`${cover}`)
+                                            .setThumbnail(`${thumb}`)
+                                            .setTimestamp()
+                                            .setURL(`${url}`)
+                                            .addField('*English* : ', `${engtitle}`)
+                                            .addField('*Japanese* : ', `${japtitle}`)
+
+                                        receivedMessage.channel.send({
+                                            embed
+                                        })
+                                    })
+                                })
+
+
+                                continueListening = false
+                                break
+                            }
+                        }
+                        break
+                    }
+
                     continueListening = false
 
                     var khongPhanUng = ResponseText.khongPhanUng()
@@ -148,6 +280,48 @@ const Message = (function () {
             console.log(e)
             return -1
         }
+    }
+
+    function buildTentenEmbed(gallery) {
+        var title = gallery.title.pretty
+        var thumb = gallery.getPagesThumbnail()[0]
+        var cover = gallery.getCover()
+        var author = gallery.tags.filter((el) => {
+            return el.type == 'artist'
+        })[0] || {
+            name: '',
+            url: '',
+            count: 0
+        }
+        var url = `https://nhentai.net/g/${gallery.id}`
+        var engtitle = ''
+        var japtitle = ''
+        if (gallery.title.english != '') {
+            engtitle = 'Eng: ' + gallery.title.english
+        }
+        if (gallery.title.japanese != '') {
+            japtitle = 'Jap: ' + gallery.title.japanese
+        }
+        var description = ''
+        gallery.tags.forEach((el) => {
+            if (el.type == 'tag')
+                description += `${el.type}: ${el.name} (${el.count})\n`
+        })
+        console.log(description)
+        const embed = new Discord.RichEmbed()
+            .setTitle(title)
+            .setAuthor(author.name + '(' + author.count + ')', author.url)
+            .setColor(0x00AE86)
+            .setDescription(description)
+            .setFooter("BOT phục vụ mục đích làm nhóm lớn mạnh", "https://i.imgur.com/Oqr0kHs.jpg")
+            .setImage(cover)
+            .setThumbnail(thumb)
+            .setTimestamp()
+            .setURL(url)
+            .addField('English :', engtitle)
+            .addField('Japanese', japtitle, true)
+
+        return embed
     }
 
     function noiNgauNhienVaiCau(rand, ...client) {

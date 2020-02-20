@@ -10,7 +10,7 @@ function getEcchiImage() {
         var generalChannel = client.channels.get(config.channels.ecchi)
         const webAttachment = new Discord.Attachment(myJson.data.url)
         generalChannel.send(webAttachment)
-    })
+    }).catch(function (error) {})
 }
 
 function reactToMessage(receivedMessage, emo) {

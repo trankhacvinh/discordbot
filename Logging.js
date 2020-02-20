@@ -22,7 +22,7 @@ Logging.prototype.logMemmbers = function () {
         console.log(" - " + guild.name)
 
         guild.members.forEach((member) => {
-            console.log(`${member.nickname} - ${member.displayName}`)
+            console.log(`${member.nickname} - ${member.displayName} - ${member.id}`)
         })
     })
 }

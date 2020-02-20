@@ -7,22 +7,26 @@ const botId = '678620052689256448'
 const vinhId = '525247662815969290'
 
 const config = {
-    token: 'Njc4NjIwMDUyNjg5MjU2NDQ4.XkzdWA.qZuF747r8gz-FEX9__NAoQuxCkM',
+    token: 'Njc4NjIwMDUyNjg5MjU2NDQ4.Xk4Yvg.JfqqNtzvoNb-P6idoOFntm5x6_E',
     triggerCommand: '.',
     channels: {
-        general: '678548998562512903',
-        ecchi: '678563701871083531'
+        general: '679584353520451584',
+        ecchi: '679617050150174720'
     },
     ids: {
         bot: botId,
-        me: vinhId
+        me: vinhId,
+        chuGuild: '678790981381914635'
     },
     interval: {
-        ecchi: 600000
+        ecchi: 300000
     },
     limit: {
         deptrai: 0,
-        deptraiMe: 0
+        deptraiMe: 0,
+        readingText: 0,
+        readingTagText: 0,
+        singASong: 0
     }
 }
 
