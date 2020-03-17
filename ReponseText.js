@@ -1,3 +1,4 @@
+const Ultis = require('./Ultis')
 var khongPhanUngData = [
     '....', 'Xin để em bình yên',
     'Hmm...', 'UwU', 'UmU', '(´＿｀。)'
@@ -45,9 +46,38 @@ var memePepeData = [{
     }
 ]
 
+var shouldResponse = [{
+    type: 'yes',
+    text: 'Nên nhé'
+}, {
+    type: 'yes',
+    text: 'Quẩy đi'
+}, {
+    type: 'yes',
+    text: 'Ok nhé'
+}, {
+    type: 'yes',
+    text: 'Cứ mạnh dạn quất'
+}, {
+    type: 'no',
+    text: 'Khuyên thật bỏ đi mà làm ngườI'
+}, {
+    type: 'no',
+    text: 'Xin đừng'
+}, {
+    type: 'no',
+    text: 'Không nên nhé'
+}, {
+    type: 'no',
+    text: 'Đừng nhé'
+}]
+
 var yesNoResponse = [{
         type: 'yes',
         text: 'Chuẩn nhé'
+    }, {
+        type: 'yes',
+        text: 'Ok'
     },
     {
         type: 'yes',
@@ -83,6 +113,9 @@ var yesNoResponse = [{
     }, {
         type: 'none',
         text: '¯\_( ͡° ͜ʖ ͡°)_/¯'
+    }, {
+        type: 'none',
+        text: 'Chịu thôi'
     }
 ]
 
@@ -125,21 +158,6 @@ var emoReactData = [{
 
 const ResponseText = (function () {
 
-    function randomMinMax(min, max, thereshold) {
-        var rand = Math.round(Math.random() * (max - min)) + thereshold
-        return rand
-    }
-
-    function randomArray(array) {
-        const res = array[Math.floor(Math.random() * array.length)]
-        return res
-    }
-
-    function randomPercent(percent) {
-        var random_boolean = Math.random() >= percent
-        return random_boolean
-    }
-
     function generateResponseJson(type, text, react, emo, userid) {
         return {
             type: type,
@@ -151,28 +169,30 @@ const ResponseText = (function () {
     }
 
     function khongPhanUng() {
-        var traLoi = randomPercent(0.5)
+        var traLoi = Ultis.randomPercent(0.5)
         if (traLoi) {
             var hour = new Date().getHours();
             if (hour < 23 && hour > 5) {
-                var text = randomArray(khongPhanUngData)
+                var text = Ultis.randomArray(khongPhanUngData)
                 return text
             } else {
-                var text = randomArray(sleepingData)
+                var text = Ultis.randomArray(sleepingData)
                 return text
             }
         }
         return ''
     }
 
-    function phanHoiDuaTrenTinNhan(message) {
+    function phanHoiDuaTrenTinNhan(receivedMessage) {
+        var message = receivedMessage.content
         var arr = []
 
         if (config.limit.readingText == 10) {
-
+            config.limit.readingTagText += 1
+            return arr
         } else {
             if (config.limit.readingText > 15)
-                config.limit.readingText = randomMinMax(0, 5, 0)
+                config.limit.readingText = Ultis.randomMinMax(0, 5, 0)
         }
 
         var message = message.toLowerCase()
@@ -192,15 +212,15 @@ const ResponseText = (function () {
             return arr
         }
 
-        if (message.includes('mòe') || message.includes('moè')) {
-            var traLoi = randomPercent(0.7)
+        if ((message.includes('mòe') || message.includes('moè')) && receivedMessage.author.id != config.ids.me) {
+            var traLoi = Ultis.randomPercent(0.7)
             if (traLoi) {
                 arr.push(generateResponseJson('tag', '', false, '', config.ids.me))
                 return arr
             }
         }
-        if (message.includes('nhái') || message.includes('nhaí')) {
-            var traLoi = randomPercent(0.7)
+        if ((message.includes('nhái') || message.includes('nhaí')) && receivedMessage.author.id != config.ids.chuGuild) {
+            var traLoi = Ultis.randomPercent(0.7)
             if (traLoi) {
                 arr.push(generateResponseJson('tag', '', false, '', config.ids.chuGuild))
                 return arr
@@ -215,23 +235,36 @@ const ResponseText = (function () {
 
         try {
             var arr = []
-            if (config.limit.readingTagText >= 10 && config.limit.readingTagText < 13) {
-                arr.push(generateResponseJson('tag', randomArray(khoChiuData), randomPercent(0.5), randomArray(khoChiuEmoData)))
 
+            var message = message.toLowerCase()
+            if (message.length < 50) {
+                if (message.includes('chào') || message.includes('hello') || message.includes('hi')) {
+                    var reactArr = emoReactData.filter((el) => {
+                        return el.type == 'good'
+                    })
+                    var shouldReact = Ultis.randomPercent(0.7)
+                    arr.push(generateResponseJson('text', Ultis.randomArray(helloResponse).text, shouldReact, Ultis.randomArray(reactArr).text))
+                    return arr
+                } else if (message.includes('bye') || message.includes('tạm biệt')) {
+                    arr.push(generateResponseJson('text', Ultis.randomArray(helloResponse).text, shouldReact, Ultis.randomArray(reactArr).text))
+                    return arr
+                }
+            }
+
+            if (config.limit.readingTagText >= 10 && config.limit.readingTagText < 13) {
+                arr.push(generateResponseJson('tag', Ultis.randomArray(khoChiuData), Ultis.randomPercent(0.5), Ultis.randomArray(khoChiuEmoData)))
+                config.limit.readingTagText += 1
                 return arr
             } else {
                 if (config.limit.readingTagText > 15)
-                    config.limit.readingTagText = randomMinMax(0, 5, 0)
+                    config.limit.readingTagText = Ultis.randomMinMax(0, 5, 0)
             }
 
-            var message = message.toLowerCase()
-            if (message.includes('phải không') || message.includes('đúng không') ||
-                message.includes('phải ko') || message.includes('đúng ko') || message.includes('sai ko') ||
-                message.includes('sai không') || message.includes('đúng hay sai') ||
-                (message.includes('phải là') && (message.includes('không') || message.includes('ko')))
+            if (message.includes('nên không') || message.includes('có nên không') ||
+                message.includes('nên k') || message.includes('có nên k') || message.includes('có nên')
             ) {
-                var yes = randomPercent(0.5)
-                var neutral = randomPercent(0.8)
+                var yes = Ultis.randomPercent(0.5)
+                var neutral = Ultis.randomPercent(0.8)
 
                 if (message.length < 50)
                     neutral = true
@@ -240,9 +273,57 @@ const ResponseText = (function () {
                     var neutext = yesNoResponse.filter((el) => {
                         return el.type == 'none'
                     })
-                    arr.push(generateResponseJson('text', randomArray(neutext).text, false, ''))
+                    arr.push(generateResponseJson('text', Ultis.randomArray(neutext).text, false, ''))
 
-                    var showimg = randomPercent(0.5)
+                    var showimg = Ultis.randomPercent(0.5)
+                    if (showimg) {
+                        arr.push(generateResponseJson('image', 'https://i.imgur.com/QTxYMsS.png', false, ''))
+                    }
+                } else {
+                    var textarr = yes ? shouldResponse.filter((el) => {
+                            return el.type == 'yes'
+                        }) :
+                        shouldResponse.filter((el) => {
+                            return el.type == 'no'
+                        })
+                    var meme = yes ? memePepeData.filter((el) => {
+                            return el.type == 'yes'
+                        }) :
+                        memePepeData.filter((el) => {
+                            return el.type == 'no'
+                        })
+                    var reactArr = yes ? emoReactData.filter((el) => {
+                            return el.type == 'good'
+                        }) :
+                        emoReactData.filter((el) => {
+                            return el.type == 'bad'
+                        })
+                    var shouldReact = yes ? Ultis.randomPercent(0.7) : false
+                    arr.push(generateResponseJson('text', Ultis.randomArray(textarr).text, shouldReact, Ultis.randomArray(reactArr).text))
+                    arr.push(generateResponseJson('image', Ultis.randomArray(meme).link, false, ''))
+                }
+
+                return arr
+            }
+            if (message.includes('phải không') || message.includes('đúng không') ||
+                message.includes('phải k') || message.includes('đúng k') || message.includes('sai k') ||
+                message.includes('phải ko') || message.includes('đúng ko') || message.includes('sai ko') ||
+                message.includes('sai không') || message.includes('đúng hay sai') ||
+                (message.includes('phải là') && (message.includes('không') || message.includes('ko')))
+            ) {
+                var yes = Ultis.randomPercent(0.5)
+                var neutral = Ultis.randomPercent(0.8)
+
+                if (message.length < 50)
+                    neutral = true
+
+                if (neutral) {
+                    var neutext = yesNoResponse.filter((el) => {
+                        return el.type == 'none'
+                    })
+                    arr.push(generateResponseJson('text', Ultis.randomArray(neutext).text, false, ''))
+
+                    var showimg = Ultis.randomPercent(0.5)
                     if (showimg) {
                         arr.push(generateResponseJson('image', 'https://i.imgur.com/QTxYMsS.png', false, ''))
                     }
@@ -265,16 +346,16 @@ const ResponseText = (function () {
                         emoReactData.filter((el) => {
                             return el.type == 'bad'
                         })
-                    var shouldReact = yes ? randomPercent(0.7) : false
-                    arr.push(generateResponseJson('text', randomArray(textarr).text, shouldReact, randomArray(reactArr).text))
-                    arr.push(generateResponseJson('image', randomArray(meme).link, false, ''))
+                    var shouldReact = yes ? Ultis.randomPercent(0.7) : false
+                    arr.push(generateResponseJson('text', Ultis.randomArray(textarr).text, shouldReact, Ultis.randomArray(reactArr).text))
+                    arr.push(generateResponseJson('image', Ultis.randomArray(meme).link, false, ''))
                 }
 
                 return arr
             }
 
             if (message.includes('hát') && message.includes('một bài')) {
-                var showtext = randomPercent(0.5)
+                var showtext = Ultis.randomPercent(0.5)
                 if (showtext) {
                     if (config.limit.singASong % 3 == 0) {
                         arr.push(generateResponseJson('tag', 'Em thì chưa học hát nhiều, mới được dạy 1 bài, xin mạn phép hát cho anh nghe\n', false, '', ''))
@@ -287,13 +368,26 @@ const ResponseText = (function () {
                     } else {
                         arr.push(generateResponseJson('tag', 'Pé nhớ là pé hát nãy rồi mà???', false, '', ''))
                         config.limit.singASong += 1
+                        config.limit.readingTagText += 1
+                        return arr
                     }
                 }
             }
 
-            if ((message.includes('cho') || message.includes('xin')) &&
+            if ((message.includes('tìm') || message.includes('cho') || message.includes('xin')) &&
                 (message.includes('2ten') || message.includes('hentai') || message.includes('tenten'))
             ) {
+                if (message.includes('số')) {
+                    var nextword = Ultis.findNextWord('số', message)
+                    arr.push(generateResponseJson('tenten', nextword, false, '', ''))
+                    nextword = ''
+                    return arr
+                } else if (message.includes('mã')) {
+                    var nextword = Ultis.findNextWord('mã', message)
+                    arr.push(generateResponseJson('tenten', nextword, false, '', ''))
+                    nextword = ''
+                    return arr
+                }
                 arr.push(generateResponseJson('tenten', '', false, '', ''))
                 return arr
             }
